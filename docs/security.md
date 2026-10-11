@@ -9,6 +9,10 @@ Les deux se traitent dans l'architecture, pas après coup.
 - Le rôle PostgreSQL de l'application (rôle dédié, ni `postgres` ni `service_role`) n'a pas `BYPASSRLS`.
 - Le tenant actif vient de la membership de l'utilisateur authentifié. S'il est indiqué par le client,
   l'API vérifie la membership avant de l'appliquer.
+- Défense en profondeur : la base refuse aussi les escalades de rôle (seul `owner` écrit sur `memberships` et
+  `tenants`), les écritures du journal d'audit au nom d'un autre et le changement de téléphone.
+- **Pas de SQL brut** avec une entrée utilisateur dans l'API : le contexte tenant est posé par `set_config`, qu'un
+  SQL injecté pourrait modifier. Règle ESLint à ajouter dans `apps/api` pour interdire `sql.raw` et `unsafe`.
 - **Exposition Supabase** : le front et la caisse n'accèdent jamais aux tables métier ; elles ne sont pas
   exposées par l'API de données (PostgREST). Chaque migration de table métier retire les droits à `anon`
   et `authenticated` (`REVOKE ALL … FROM anon, authenticated`) ; le schéma n'est pas dans « Exposed schemas » ;
