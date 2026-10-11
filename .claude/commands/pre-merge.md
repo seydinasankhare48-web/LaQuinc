@@ -12,6 +12,10 @@ Vérifie la branche courante avant merge. Arrête-toi et signale au premier bloc
    - chaque endpoint a un contrôle de rôle et une validation Zod ;
    - actions sensibles écrites dans `audit_logs` ;
    - aucun secret, aucune clé, aucun `.env` dans le diff ;
+   - Supabase : migrations de tables métier avec `REVOKE ALL … FROM anon, authenticated` et sans schéma exposé ;
+     `service_role` absente de `apps/web`, du navigateur d'`apps/admin` et de la caisse ; pas d'accès direct
+     aux tables depuis le front (le SDK sert à la connexion) ; JWT vérifié (JWKS, `iss`, `exp`, `aal2` pour
+     l'admin) ; buckets privés avec URL signées ;
    - pas de texte d'interface en dur hors `packages/i18n` ;
    - pages publiques : métadonnées, canonical, données structurées ; pages privées en `noindex`.
 3. **Isolation** : si le diff touche la base, l'API ou les permissions, lance l'agent `tenant-security-reviewer`.

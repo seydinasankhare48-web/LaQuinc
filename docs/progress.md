@@ -12,7 +12,7 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 
 ## Checklist du MVP
 
-- [ ] Semaines 1–2 · Fondations (monorepo, CI, auth OTP, tenants, rôles, RLS + tests d'isolation, staging)
+- [ ] Semaines 1–2 · Fondations (monorepo, CI, Supabase Auth + vérification JWT, tenants, rôles, RLS + tests d'isolation, staging)
 - [ ] Semaines 3–4 · Catalogue et stock
 - [ ] Semaines 5–6 · Caisse hors ligne
 - [ ] Semaine 7 · Clients et crédit
@@ -29,6 +29,8 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - [ ] Compte marchand chez l'agrégateur choisi
 - [ ] Rendez-vous expert-comptable (facturation, TVA)
 - [ ] Rendez-vous juriste (CGU, CDP)
+- [ ] Créer le projet Supabase (région Europe de l'Ouest, offre Pro)
+- [ ] Choisir le fournisseur SMS (coût et délivrabilité vers Orange, Free, Expresso)
 - [ ] Domaines `laquinc.sn` et `laquinc.com`
 - [ ] Dépôt de la marque à l'OAPI
 
@@ -41,6 +43,12 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-11 (soir, Supabase)
+- Fait : adoption de Supabase comme infrastructure (ADR 0006) ; documentation, `CLAUDE.md`, skill, agent et `/pre-merge` mis à jour ; plugins installés (frontend-design, security-guidance, superpowers, code-review, context7).
+- Décisions : [ADR 0006](decisions/0006-supabase.md). Data API désactivée si compatible (à tester), sinon schéma non exposé + `REVOKE` ; faux schéma `auth` en CI.
+- À faire plus tard (hors docs) : retirer PostgreSQL de `docker-compose.yml`, ajouter les variables Supabase à `.env.example`, adapter la base de test dans `.github/workflows/ci.yml`.
+- Prochaine étape : merger les PR (CI puis docs), puis étape 3 (base et RLS).
 
 ### 2026-10-11 (soir, suite)
 - Fait : étape 2 — CI GitHub Actions (lint, typecheck, test avec PostgreSQL 16, build, `pnpm audit`) et Dependabot, PR #1 verte (branche `chore/ci`).

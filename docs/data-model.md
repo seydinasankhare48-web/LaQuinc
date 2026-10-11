@@ -12,13 +12,16 @@ Trois règles : le stock et les dettes se calculent à partir de mouvements ; ch
 - Quantités : `numeric(12,3)`, suffixe `_qty`.
 - Dates : `timestamptz` en UTC ; l'affichage se fait dans le fuseau du tenant (`Africa/Dakar` par défaut).
 - Chaque table avec `tenant_id` : RLS activée + index sur `(tenant_id, …)`.
+- Exposition Supabase : aucune table métier n'est accessible par l'API de données (PostgREST). Chaque
+  migration qui crée une table fait `REVOKE ALL ON <table> FROM anon, authenticated` et n'ajoute aucun
+  `GRANT` à ces rôles ; le schéma n'est pas dans « Exposed schemas ».
 
 ## Entités du MVP
 
 | Table | Rôle | Règles |
 | --- | --- | --- |
 | `tenants` | Une quincaillerie abonnée | NINEA, RCCM, pays, devise `XOF`, fuseau, `slug` public (URL boutique) |
-| `users` | Une personne | Identifiée par son téléphone (E.164) |
+| `users` | Une personne | `id` = `auth.users.id` (Supabase Auth) ; téléphone (E.164). Les rôles ne viennent pas d'Auth mais de `memberships` |
 | `memberships` | Rôle d'un user dans un tenant | `owner`, `manager`, `cashier` ; PIN caisse haché |
 | `categories` | Catégories du catalogue | Arborescence simple (`parent_id`) |
 | `products` | Articles | `base_unit` (piece, kg, m, sac…), `purchase_price_xof`, `sale_price_xof`, `sku`, `slug`, `low_stock_threshold_qty` |
@@ -44,11 +47,12 @@ Hors RLS tenant, accessibles uniquement par `apps/admin` :
 | `plans` | Formules et prix |
 | `subscriptions` | Statut (trialing, active, past_due, suspended, canceled), dates d'essai et d'échéance |
 | `subscription_payments` | Montant, moyen, référence, statut |
-| `platform_admins` | Comptes admin LaQuinc (2FA obligatoire) |
+| `platform_admins` | Comptes admin LaQuinc (`user_id` = `auth.users.id`, MFA TOTP obligatoire : `aal2` exigé par l'API) |
 | `daily_platform_stats` | Agrégats calculés chaque nuit par le worker |
 
 ## Migrations
 
 - Générées avec Drizzle Kit, relues avant application, jamais modifiées après merge.
-- Une migration qui crée une table métier crée aussi sa politique RLS et son test d'isolation.
+- Une migration qui crée une table métier crée aussi sa politique RLS, le retrait des droits à `anon` et
+  `authenticated`, et son test d'isolation.
 - Pas de migration destructive (suppression de colonne) sans étape intermédiaire et ADR.

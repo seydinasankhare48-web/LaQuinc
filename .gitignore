@@ -10,3 +10,19 @@ coverage
 playwright-report
 test-results
 laquinc.zip
+
+# Supabase CLI (local)
+supabase/.branches
+supabase/.temp
+
+# Vercel
+.vercel
+
+# Divers
+.DS_Store
+*.log
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.pem
+pgdump-*.sql

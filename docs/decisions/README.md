@@ -10,6 +10,7 @@ Un ADR accepté ne se modifie pas : s'il est remplacé, on en écrit un nouveau 
 | [0003](0003-agregateur-paiement.md) | Agrégateur de paiement derrière une interface | Acceptée |
 | [0004](0004-caisse-hors-ligne.md) | Caisse PWA hors ligne avec synchronisation idempotente | Acceptée |
 | [0005](0005-montants-entiers-xof.md) | Montants en entiers FCFA | Acceptée |
+| [0006](0006-supabase.md) | Supabase comme infrastructure, logique métier dans l'API | Acceptée |
 
 ## Modèle
 

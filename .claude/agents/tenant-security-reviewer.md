@@ -14,10 +14,19 @@ Vérifie, et pour chaque point donne fichier et ligne :
 **Isolation tenant**
 - Chaque nouvelle table métier a `tenant_id NOT NULL`, la RLS activée (`ENABLE` et `FORCE`) et une politique.
 - Aucune requête n'utilise un rôle avec `BYPASSRLS` ni ne désactive la RLS hors migrations et stats admin.
-- Le contexte tenant vient de la session authentifiée, jamais d'un paramètre envoyé par le client.
-- Aucun `tenant_id` lu depuis le body, la query ou un header contrôlé par l'utilisateur.
+- Le contexte tenant vient de la membership de l'utilisateur authentifié (JWT vérifié).
+- Aucun `tenant_id` lu depuis le body ou la query. Un tenant indiqué par le client (ex. `X-Tenant-Id`)
+  n'est appliqué qu'après vérification de la membership de l'utilisateur.
 - Un test d'isolation existe pour chaque nouvelle ressource (lecture, modification, suppression croisées → 404).
 - Les jobs du worker reçoivent et appliquent le `tenant_id`.
+
+**Supabase**
+- Chaque migration de table métier retire les droits à `anon` et `authenticated` (`REVOKE ALL`) et n'ajoute aucun `GRANT` à ces rôles ; le schéma n'est pas exposé (PostgREST).
+- La clé `service_role` n'apparaît que dans la configuration du worker et des stats admin : jamais dans `apps/web`, le code navigateur de `apps/admin` ni la caisse (`grep` sur `service_role` et `SERVICE_ROLE`).
+- Le front n'appelle pas `supabase.from(...)` ni `supabase.rpc(...)` : le SDK sert à la connexion seulement.
+- Le JWT est vérifié côté API (signature via JWKS, `iss`, `exp`) ; jamais décodé sans vérification ; l'API du back-office exige `aal2`.
+- Buckets Storage privés par défaut ; accès par URL signées générées par l'API ; seul le bucket des photos de la boutique est public.
+- L'API se connecte avec le rôle dédié sans `BYPASSRLS`, pas avec `postgres` ni `service_role`.
 
 **Permissions**
 - Chaque endpoint a un contrôle de rôle explicite côté serveur.
