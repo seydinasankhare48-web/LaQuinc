@@ -1,17 +1,21 @@
 # Architecture
 
-Un monorepo TypeScript, une API, une base PostgreSQL partagée où chaque quincaillerie (tenant) est isolée
-par `tenant_id` + Row Level Security. Le modèle le plus simple à maintenir seul ; il tient jusqu'à
+Un monorepo TypeScript, une API, une base PostgreSQL partagée (hébergée par Supabase) où chaque quincaillerie
+(tenant) est isolée par `tenant_id` + Row Level Security. Supabase fournit l'infrastructure (base, connexion,
+fichiers) ; la logique métier reste dans `apps/api` (voir ADR 0006). Le modèle le plus simple à maintenir seul ; il tient jusqu'à
 plusieurs milliers de clients sans changement.
 
 ## Vue d'ensemble
 
 ```
- Caisse (PWA, hors ligne) ─┐
- Espace gérant ────────────┼──► apps/api (NestJS) ──► PostgreSQL (RLS)
- Boutique publique (SSR) ──┘         │   ▲            Redis + apps/worker ──► WhatsApp / SMS
- apps/admin (back-office) ───────────┘   │            Stockage S3 (photos, PDF)
-                                         └── webhook signé ── Agrégateur de paiement
+ Caisse (PWA, hors ligne) ─┐   connexion seulement (SDK)
+ Espace gérant ────────────┼──────────────────────────► Supabase Auth (téléphone + OTP, MFA admin)
+ Boutique publique (SSR) ──┤                                   │ JWT
+ apps/admin (back-office) ─┘                                   ▼
+        └── toutes les données ──► apps/api (NestJS) ──► PostgreSQL Supabase (RLS)
+                                      │   ▲               Supabase Storage (photos, PDF)
+                                      │   └── webhook signé ── Agrégateur de paiement
+                                      └──► Redis + apps/worker ──► WhatsApp / SMS
 ```
 
 ## Structure du dépôt
@@ -45,12 +49,17 @@ Chaque module suit la même forme (voir le skill `module-multi-tenant`) :
 
 ## Contexte tenant
 
-1. Le guard d'auth résout l'utilisateur et sa `membership` (tenant + rôle).
+1. Le guard d'auth vérifie le JWT Supabase (signature via le JWKS du projet, `iss`, `exp`), puis résout
+   l'utilisateur (`sub` = `users.id`) et sa `membership` (tenant + rôle). Si le client indique un tenant
+   (ex. en-tête `X-Tenant-Id`), l'API vérifie que l'utilisateur en est membre avant de l'appliquer.
 2. Chaque requête ouvre une transaction et exécute `SELECT set_config('app.tenant_id', $1, true)`
    (portée limitée à la transaction ; ne jamais concaténer l'UUID dans la requête SQL).
 3. Les politiques RLS filtrent sur `current_setting('app.tenant_id')`.
-4. L'application se connecte avec un rôle PostgreSQL **sans** `BYPASSRLS`. Seules les migrations et le
-   calcul nocturne des statistiques admin utilisent un rôle dédié, jamais exposé à une requête HTTP.
+4. L'application se connecte avec un rôle PostgreSQL dédié **sans** `BYPASSRLS` (pas `postgres`, pas
+   `service_role`). Seules les migrations et le calcul nocturne des statistiques admin utilisent un rôle
+   dédié, jamais exposé à une requête HTTP.
+5. Les tables métier ne sont pas exposées par l'API de données Supabase (PostgREST) : droits retirés à
+   `anon` et `authenticated`, schéma non exposé (voir `docs/security.md`).
 
 ## Caisse hors ligne
 
@@ -63,12 +72,16 @@ Chaque module suit la même forme (voir le skill `module-multi-tenant`) :
 
 ## Hébergement
 
-- Front (`web`, `admin`) : Vercel. API, worker, PostgreSQL, Redis : Railway, Render ou Fly.
-- Région la plus proche de l'Afrique de l'Ouest disponible (Europe de l'Ouest aujourd'hui).
+- Front (`web`, `admin`) : Vercel. API, worker, Redis : Railway, Render ou Fly (hébergeur à choisir).
+- Base, authentification et fichiers : Supabase, région Europe de l'Ouest (région exacte à confirmer à la
+  création du projet), offre Pro minimale pour les sauvegardes quotidiennes.
+- Local : CLI Supabase (`supabase start`, Docker) pour la base, l'auth et le stockage ; Redis via `docker compose`.
 - Environnements : `local`, `staging` (déployé à chaque merge sur `main`), `production` (tag de version).
-- Sauvegardes quotidiennes chiffrées, test de restauration mensuel (voir `docs/security.md`).
+- Sauvegardes : Supabase + export `pg_dump` mensuel, test de restauration mensuel (voir `docs/security.md`).
+- Tests de base en CI : PostgreSQL avec un faux schéma `auth` (`auth.users` minimal) ; la CLI Supabase
+  locale sert de contrôle de conformité.
 
 ## Choix structurants
 
 Voir `docs/decisions/` : monorepo TypeScript (0001), multi-tenant RLS (0002), agrégateur de paiement (0003),
-caisse hors ligne (0004), montants en entiers FCFA (0005).
+caisse hors ligne (0004), montants en entiers FCFA (0005), Supabase comme infrastructure (0006).

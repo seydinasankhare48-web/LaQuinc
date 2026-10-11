@@ -10,9 +10,10 @@ Wave / Orange Money / Free Money.
 
 ```bash
 pnpm install
-cp .env.example .env        # puis renseigner les valeurs
-docker compose up -d        # PostgreSQL + Redis en local
-pnpm db:migrate
+cp .env.example .env        # puis renseigner les valeurs (URL et clés Supabase locales : `supabase status`)
+supabase start              # CLI Supabase : PostgreSQL, Auth, Storage en local (Docker requis)
+docker compose up -d        # Redis en local
+pnpm db:migrate             # migrations Drizzle (la CLI Supabase ne gère pas les migrations)
 pnpm dev                    # web, admin, api et worker
 ```
 

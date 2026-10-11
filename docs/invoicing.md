@@ -16,7 +16,7 @@
   l'émission (pas au brouillon), dans une transaction qui verrouille `invoice_sequences`.
 - Facture émise = immuable. Correction ou annulation = avoir (`credit_note`) qui référence la facture.
 - Une facture annulée reste visible avec son avoir.
-- PDF généré par le worker, archivé dans le stockage, empreinte (hash) conservée en base pour l'intégrité.
+- PDF généré par le worker, archivé dans Supabase Storage (bucket privé, URL signées), empreinte (hash) conservée en base pour l'intégrité.
 - Tenant à l'impôt synthétique (non assujetti à la TVA) : facture sans TVA avec la mention adaptée (paramètre du tenant).
 
 ## Cycle

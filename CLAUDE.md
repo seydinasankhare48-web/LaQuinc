@@ -19,14 +19,18 @@ Le développeur travaille seul : privilégie toujours la solution la plus simple
 - `apps/api` : NestJS, un module par domaine.
 - `apps/worker` : BullMQ (PDF, WhatsApp/SMS, relances, statistiques nocturnes).
 - `packages/db` : PostgreSQL + Drizzle, migrations, politiques RLS.
+- Infrastructure : **Supabase** (PostgreSQL hébergé, Auth téléphone + OTP, MFA, Storage) ; la logique métier
+  reste dans `apps/api`. La CLI Supabase sert à l'environnement local ; les migrations restent celles de Drizzle
+  (voir `docs/decisions/0006-supabase.md`).
 - `packages/validation` : schémas Zod partagés front/back.
 - `packages/payments`, `packages/invoicing`, `packages/ui`, `packages/i18n`.
 
 ## Règles non négociables
 
 1. **Multi-tenant** : chaque table métier a une colonne `tenant_id` et une politique Row Level Security.
-   Aucune requête ne contourne la RLS. Chaque nouveau module a un test qui prouve qu'un tenant
-   ne peut ni lire ni modifier les données d'un autre.
+   Aucune requête ne contourne la RLS. Le tenant vient de la membership de l'utilisateur authentifié
+   (JWT Supabase vérifié), jamais d'une valeur envoyée par le client sans vérification. Chaque nouveau
+   module a un test qui prouve qu'un tenant ne peut ni lire ni modifier les données d'un autre.
 2. **Argent** : montants en entiers FCFA (`integer`/`bigint`, jamais de float). Quantités en
    `numeric(12,3)` (2,5 m de câble). Le franc CFA n'a pas de centimes.
 3. **Stock et dettes** : jamais un champ qu'on écrase. Le stock = somme des `stock_movements`,
@@ -39,11 +43,32 @@ Le développeur travaille seul : privilégie toujours la solution la plus simple
    gérant uniquement, et écrit dans `audit_logs`.
 7. **Secrets** : uniquement en variables d'environnement. Ne lis jamais les fichiers `.env`.
    Les clés API des quincailleries (agrégateur de paiement) sont chiffrées en base.
+   La clé Supabase `service_role` contourne la RLS : voir les règles Supabase ci-dessous.
 8. **Paiements** : une commande est payée uniquement sur webhook vérifié (signature + idempotence),
    jamais sur la redirection du client. Tout passe par l'interface `PaymentProvider`.
 9. **Hors ligne** : la caisse doit fonctionner sans réseau. Les identifiants des ventes sont des
    UUID générés sur l'appareil. Toute nouvelle logique de vente doit rester rejouable à la synchronisation.
 10. **Suppression** : archivage logique (`archived_at`) pour tout ce qui touche à l'argent ou au stock.
+
+## Règles Supabase
+
+S1. Le front et la caisse n'accèdent **jamais** directement aux tables métier : ventes, stock, crédit,
+    factures, paiements passent par l'API. Le SDK Supabase côté client sert uniquement à la connexion.
+S2. L'API vérifie le JWT Supabase (JWKS, `iss`, `exp`, `aal`), puis ouvre une transaction et exécute
+    `set_config('app.tenant_id', …, true)` avec un rôle PostgreSQL dédié **sans** `BYPASSRLS`.
+    Les politiques RLS restent basées sur `app.tenant_id`.
+S3. Le tenant actif n'est jamais cru sur parole : s'il vient du client, l'API vérifie la membership de
+    l'utilisateur avant de l'appliquer.
+S4. Les tables métier ne sont pas exposées par l'API de données Supabase (PostgREST) : chaque migration
+    de table métier retire les droits à `anon` et `authenticated`, et le schéma n'est pas exposé.
+S5. La clé `service_role` n'existe que dans les variables d'environnement du worker et du calcul des
+    stats admin. Jamais dans `apps/web`, ni côté navigateur de `apps/admin`, ni dans la caisse.
+S6. Storage : buckets privés par défaut, accès par URL signées générées par l'API ; seul le bucket des
+    photos de la boutique publique est public.
+S7. `users.id = auth.users.id` ; nos tables `users` et `memberships` restent la source des rôles.
+    Le PIN caisse reste dans notre base, haché.
+S8. Sauvegardes : celles de Supabase + un export `pg_dump` mensuel avec test de restauration
+    (les fichiers Storage ne sont pas dans les sauvegardes de la base : export séparé).
 
 ## Interface et SEO
 

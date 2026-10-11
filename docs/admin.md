@@ -16,7 +16,7 @@ abonnés, revenus et paiements. MVP minimal en semaine 11, version complète en 
 | Volume boutiques en ligne | Total des commandes en ligne payées | Phase 2 |
 | Répartition géographique | Abonnés par ville et pays | Phase 2 |
 
-Les indicateurs sont calculés chaque nuit par le worker dans `daily_platform_stats` ;
+Les indicateurs sont calculés chaque nuit par le worker (ou, en option, par `pg_cron`) dans `daily_platform_stats` ;
 les écrans de l'admin lisent ces agrégats, pas les tables des tenants.
 
 ## Écrans
@@ -37,7 +37,9 @@ les écrans de l'admin lisent ces agrégats, pas les tables des tenants.
 
 ## Sécurité
 
-- Comptes `platform_admins` distincts, double authentification obligatoire, sessions courtes.
+- Comptes `platform_admins` distincts, **MFA TOTP Supabase obligatoire**, sessions courtes. L'API de
+  l'admin exige `aal2` dans le JWT (Supabase n'a pas de réglage « MFA obligatoire ») ; un compte sans
+  facteur inscrit est refusé jusqu'à l'inscription du TOTP.
 - Chaque action écrite dans `audit_logs`.
 - Par défaut : chiffres agrégés et état des abonnements, jamais le détail des ventes ni les fichiers
   clients des quincailleries.

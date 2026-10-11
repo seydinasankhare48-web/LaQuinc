@@ -23,12 +23,21 @@ CREATE POLICY tenant_isolation ON <table>
   WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);
 ```
 
+- Dans la même migration, retirer l'accès à l'API de données Supabase (PostgREST) :
+
+```sql
+REVOKE ALL ON <table> FROM anon, authenticated;
+```
+
+  Ne jamais faire de `GRANT` à `anon` ou `authenticated` sur une table métier, ni exposer son schéma.
+
 - Si la donnée touche à l'argent ou au stock : ajout seul (pas d'UPDATE/DELETE), corrections par écriture inverse.
 
 ## 2. Validation (`packages/validation`)
 
 - Schémas Zod `create<Entity>Schema`, `update<Entity>Schema`, `list<Entity>QuerySchema`.
-- Jamais de `tenant_id` dans les schémas d'entrée : il vient de la session.
+- Jamais de `tenant_id` dans les schémas d'entrée : il vient de la membership de l'utilisateur authentifié
+  (JWT vérifié). Un tenant choisi par le client n'est appliqué qu'après vérification de la membership.
 - Montants : `z.number().int().nonnegative()`.
 
 ## 3. API (`apps/api/src/modules/<domaine>/`)
