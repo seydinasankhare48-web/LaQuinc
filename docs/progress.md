@@ -6,8 +6,8 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 ## État actuel
 
 - **Phase** : 1 · MVP gestion
-- **Bloc en cours** : Semaines 1–2 · Fondations (pas encore commencé)
-- **Prochaine étape** : initialiser le monorepo et valider le CLAUDE.md
+- **Bloc en cours** : Semaines 1–2 · Fondations (étape 1 faite — voir `docs/plan-fondations.md`)
+- **Prochaine étape** : étape 2 du plan des Fondations (CI GitHub Actions)
 - **Bloquants** : aucun
 
 ## Checklist du MVP
@@ -41,6 +41,11 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-11 (soir)
+- Fait : étape 1 des Fondations — monorepo pnpm/Turborepo, squelettes apps et packages, `git init`, commit `chore: init monorepo`. `lint`, `typecheck`, `test`, `build` passent.
+- Décisions : TypeScript épinglé en 6.0.x (typescript-eslint ne supporte pas encore TS 7) ; `apps/api` et `apps/worker` en ESM (NestJS 12), imports relatifs avec extension `.js`.
+- Prochaine étape : CI (étape 2), puis base et RLS (étape 3).
 
 ### 2026-10-11
 - Fait : plan du produit, documentation initiale, configuration Claude Code.
