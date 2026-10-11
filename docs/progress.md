@@ -6,8 +6,8 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 ## État actuel
 
 - **Phase** : 1 · MVP gestion
-- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–3 faites — voir `docs/plan-fondations.md`)
-- **Prochaine étape** : étape 4 du plan des Fondations (API : JWT Supabase, tenants, rôles, audit)
+- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–4 faites — voir `docs/plan-fondations.md`)
+- **Prochaine étape** : étape 5 du plan des Fondations (web minimal : connexion, inscription, e2e Playwright)
 - **Bloquants** : aucun
 
 ## Checklist du MVP
@@ -43,6 +43,11 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-12 (étape 4 · API)
+- Fait : `apps/api` — vérification du JWT Supabase (JWKS, `iss`, `aud`, `exp`, algorithmes asymétriques seulement), résolution du tenant par membership (`X-Tenant-Id` vérifié, memberships et tenants archivés ignorés), `@Roles`, `POST /tenants` (inscription transactionnelle + audit), `GET /me`, `GET/PATCH /tenants/current`, `GET /memberships`, `PATCH /memberships/:id`, `POST /memberships/:id/archive` (pas d'auto-modification, dernier owner protégé par verrou), filtre d'erreurs unique, validation Zod (`packages/validation`), helmet, CORS, limitation de débit, règle ESLint contre `sql.raw`/`.unsafe`. 37 tests API (JWT, rôles, isolation, inscription, garde-fous, démarrage sans providers factices) ; vérifiés par mutation.
+- Décisions : bundle `tsup` + `@Inject` explicites ; `turbo` exécute les tests des paquets dépendants de `@laquinc/db` après ceux de `db` (même base de test). Limite : cette étape a été codée avant ses tests (écart à la règle « tests d'abord », compensé par des tests de mutation).
+- Reste à faire : invitation d'un membre par téléphone (demande une conception : la RLS interdit de chercher un utilisateur sans membership) ; test de la limitation de débit (désactivée en test) ; `aal2` pour l'admin (semaine 11) ; vérifier sur un vrai JWT Supabase le format du téléphone et `aud`.
 
 ### 2026-10-12 (étape 3 · base et RLS)
 - Fait : `packages/db` (schéma Drizzle `tenants`, `users`, `memberships`, `audit_logs`), migrations avec RLS activée et forcée, `REVOKE` pour `anon`/`authenticated`, `audit_logs` en ajout seul (droits + trigger), rôles `laquinc_app` et `laquinc_migrator`, helper `withTenant`. 46 tests (isolation, rôles, garde-fous du catalogue, fuite de contexte, escalade de rôle) ; vérifiés en cassant volontairement des politiques. Revue sécurité : escalade de rôle intra-tenant corrigée (contexte `app.role`), `audit_logs` non falsifiable, PIN retiré de `memberships`, migrations testées avec `laquinc_migrator`, garde-fou contre le reset d'une base non-test.

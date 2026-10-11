@@ -1,5 +1,11 @@
 {
-  "extends": "@laquinc/config/tsconfig.nest.json",
-  "compilerOptions": { "noEmit": true },
-  "include": ["src"]
+  "extends": "@laquinc/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "isolatedModules": false,
+    "paths": {}
+  },
+  "include": ["src", "vitest.config.ts", "tsup.config.ts"]
 }
