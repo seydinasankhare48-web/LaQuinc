@@ -66,6 +66,29 @@ describe('memberships', () => {
     expect(rows.map((r) => r.tenantId).sort()).toEqual([w.tenantA, w.tenantB].sort());
   });
 
+  it('hides the memberships of other tenants as soon as a tenant is active', async () => {
+    const rows = await withTenant(db, { tenantId: w.tenantA, userId: w.userShared, role: 'cashier' }, (tx) =>
+      tx.select().from(memberships),
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r) => r.tenantId === w.tenantA)).toBe(true);
+  });
+
+  it('lets a user with no active tenant see their own tenants only (for the tenant picker)', async () => {
+    const rows = await withTenant(db, { userId: w.userShared }, (tx) => tx.select().from(tenants));
+    expect(rows.map((r) => r.id).sort()).toEqual([w.tenantA, w.tenantB].sort());
+    const onlyA = await withTenant(db, { userId: w.userA }, (tx) => tx.select().from(tenants));
+    expect(onlyA.map((r) => r.id)).toEqual([w.tenantA]);
+    const stranger = await withTenant(db, { userId: uuidv7() }, (tx) => tx.select().from(tenants));
+    expect(stranger).toEqual([]);
+  });
+
+  it('does not show a tenant whose membership is archived', async () => {
+    await admin`UPDATE memberships SET archived_at = now() WHERE tenant_id = ${w.tenantB} AND user_id = ${w.userShared}`;
+    const rows = await withTenant(db, { userId: w.userShared }, (tx) => tx.select().from(tenants));
+    expect(rows.map((r) => r.id)).toEqual([w.tenantA]);
+  });
+
   it('does not let a user with no tenant context write memberships', async () => {
     await expect(
       withTenant(db, { userId: w.userShared }, (tx) =>

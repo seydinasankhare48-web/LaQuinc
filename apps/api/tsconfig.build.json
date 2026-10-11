@@ -1,6 +1,0 @@
-{
-  "extends": "@laquinc/config/tsconfig.nest.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "src" },
-  "include": ["src"],
-  "exclude": ["src/**/*.spec.ts", "src/**/__tests__"]
-}

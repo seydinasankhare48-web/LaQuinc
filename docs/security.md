@@ -12,7 +12,7 @@ Les deux se traitent dans l'architecture, pas après coup.
 - Défense en profondeur : la base refuse aussi les escalades de rôle (seul `owner` écrit sur `memberships` et
   `tenants`), les écritures du journal d'audit au nom d'un autre et le changement de téléphone.
 - **Pas de SQL brut** avec une entrée utilisateur dans l'API : le contexte tenant est posé par `set_config`, qu'un
-  SQL injecté pourrait modifier. Règle ESLint à ajouter dans `apps/api` pour interdire `sql.raw` et `unsafe`.
+  SQL injecté pourrait modifier. Une règle ESLint de `apps/api` interdit `sql.raw` et `.unsafe`.
 - **Exposition Supabase** : le front et la caisse n'accèdent jamais aux tables métier ; elles ne sont pas
   exposées par l'API de données (PostgREST). Chaque migration de table métier retire les droits à `anon`
   et `authenticated` (`REVOKE ALL … FROM anon, authenticated`) ; le schéma n'est pas dans « Exposed schemas » ;
@@ -45,6 +45,7 @@ Les deux se traitent dans l'architecture, pas après coup.
 | Annuler une vente | Oui | Oui | Non |
 | Modifier un prix, ajuster le stock | Oui | Oui | Non |
 | Gérer les utilisateurs, paramètres, compte marchand | Oui | Non | Non |
+| Consulter la liste du personnel (noms, téléphones) | Oui | Oui | Non |
 | Voir marges et tableau de bord complet | Oui | Oui | Non |
 
 Vérifié côté serveur sur chaque endpoint par un décorateur de rôle ; l'interface ne fait que masquer.
@@ -59,6 +60,14 @@ Le gérant consulte le journal de sa quincaillerie.
 
 - Validation Zod de tous les entrants ; réponses d'erreur sans détail interne.
 - Limitation de débit : connexion (Supabase Auth + API), OTP, endpoints publics de la boutique, webhooks.
+  Par IP, avec `TRUST_PROXY` = nombre exact de proxys devant l'API (0 par défaut : ne jamais croire `X-Forwarded-For`
+  sans proxy connu). `RATE_LIMIT_DISABLED` est refusé en production. Inscription : 5 par minute et par IP, et au
+  plus 3 quincailleries par propriétaire (`TENANT_LIMIT`).
+- Refus par défaut : une route de l'API doit déclarer `@Public`, `@Authenticated`, `@RequireTenant` ou `@Roles` ;
+  un test parcourt toutes les routes et échoue si l'une l'oublie.
+- Un JWT reste accepté jusqu'à son expiration même si l'utilisateur est banni (les memberships, elles, sont relues à
+  chaque requête) ; les sessions anonymes Supabase sont refusées.
+- Les erreurs inattendues sont journalisées sans message ni paramètres (les erreurs SQL de Drizzle contiennent les valeurs).
 - En-têtes de sécurité (CSP, HSTS…), CORS restreint aux domaines LaQuinc.
 - Webhooks : signature vérifiée, horodatage contrôlé, traitement idempotent.
 - Uploads : types et tailles limités.

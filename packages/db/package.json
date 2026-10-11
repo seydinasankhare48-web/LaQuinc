@@ -25,5 +25,10 @@
     "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.9",
     "uuidv7": "^1.2.1"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/test/index.ts",
+    "./testing/global-setup": "./src/test/global-setup.ts"
   }
 }

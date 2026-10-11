@@ -39,6 +39,12 @@ laquinc/
 └── docs/
 ```
 
+## Build et exécution de l'API
+
+Les paquets du workspace (`@laquinc/*`) sont en TypeScript source : l'API est bundlée avec `tsup`
+(`pnpm --filter @laquinc/api build` → `dist/main.js`, `start` pour l'exécuter), `tsx watch` en développement.
+L'injection NestJS utilise des `@Inject(Jeton)` explicites (l'outillage de test n'émet pas les métadonnées de décorateurs).
+
 ## Modules de l'API (`apps/api/src/modules/`)
 
 `auth`, `tenants`, `users`, `catalog`, `stock`, `sales`, `customers` (crédit), `quotes`, `invoices`,
