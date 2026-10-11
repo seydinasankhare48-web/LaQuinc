@@ -50,6 +50,25 @@ Hors RLS tenant, accessibles uniquement par `apps/admin` :
 | `platform_admins` | Comptes admin LaQuinc (`user_id` = `auth.users.id`, MFA TOTP obligatoire : `aal2` exigé par l'API) |
 | `daily_platform_stats` | Agrégats calculés chaque nuit par le worker |
 
+## Contexte et politiques RLS (socle)
+
+L'API pose deux valeurs par transaction (`withTenant`, `set_config(..., true)`) : `app.tenant_id` (tenant actif,
+membership déjà vérifiée) et `app.user_id` (`sub` du JWT). Les fonctions `app_tenant_id()` et `app_user_id()` les lisent.
+
+| Table | Lecture | Écriture |
+| --- | --- | --- |
+| `tenants` | `id = app_tenant_id()` | INSERT/UPDATE si `id = app_tenant_id()` ; pas de DELETE |
+| `memberships` | `tenant_id = app_tenant_id()` **ou** `user_id = app_user_id()` (choix du tenant après connexion) | INSERT/UPDATE si `tenant_id = app_tenant_id()` ; pas de DELETE (archivage) |
+| `users` | soi-même, ou membre du tenant courant | INSERT/UPDATE si `id = app_user_id()` |
+| `audit_logs` | `tenant_id = app_tenant_id()` | INSERT seulement ; trigger interdisant UPDATE/DELETE/TRUNCATE à tout rôle |
+
+Inscription : l'API génère l'UUID du tenant, le met dans le contexte, puis insère tenant, user et membership
+dans une seule transaction. Aucune fonction `SECURITY DEFINER` ne contourne la RLS.
+
+Rôles : `laquinc_app` (API, sans `BYPASSRLS`, ne possède aucune table) et `laquinc_migrator` (migrations),
+créés par `pnpm db:bootstrap` (mots de passe en variables d'environnement). Le rôle de statistiques admin
+(lecture inter-tenants) viendra avec le back-office (semaine 11).
+
 ## Migrations
 
 - Générées avec Drizzle Kit, relues avant application, jamais modifiées après merge.

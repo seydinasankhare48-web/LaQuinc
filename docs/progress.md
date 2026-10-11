@@ -6,8 +6,8 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 ## État actuel
 
 - **Phase** : 1 · MVP gestion
-- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–2 faites — voir `docs/plan-fondations.md`)
-- **Prochaine étape** : étape 3 du plan des Fondations (base et RLS, tests d'isolation d'abord)
+- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–3 faites — voir `docs/plan-fondations.md`)
+- **Prochaine étape** : étape 4 du plan des Fondations (API : JWT Supabase, tenants, rôles, audit)
 - **Bloquants** : aucun
 
 ## Checklist du MVP
@@ -43,6 +43,11 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-12 (étape 3 · base et RLS)
+- Fait : `packages/db` (schéma Drizzle `tenants`, `users`, `memberships`, `audit_logs`), migrations avec RLS activée et forcée, `REVOKE` pour `anon`/`authenticated`, `audit_logs` en ajout seul (droits + trigger), rôles `laquinc_app` et `laquinc_migrator`, helper `withTenant`. 32 tests (isolation, rôles, garde-fous du catalogue, fuite de contexte) ; vérifiés en cassant volontairement des politiques.
+- Décisions : contexte `app.tenant_id` + `app.user_id` (voir `docs/data-model.md`) ; rôle de stats reporté à la semaine 11 (BYPASSRLS demande un superuser, à vérifier sur Supabase) ; `postgres-test` sur le port 54330.
+- À vérifier : MFA TOTP sur l'offre gratuite (le `config.toml` de la CLI indique « Pro ») ; pooler Supabase en mode transaction ; droit `REFERENCES` du migrator sur `auth.users` en production.
 
 ### 2026-10-11 (soir, Supabase)
 - Fait : adoption de Supabase comme infrastructure (ADR 0006) ; documentation, `CLAUDE.md`, skill, agent et `/pre-merge` mis à jour ; plugins installés (frontend-design, security-guidance, superpowers, code-review, context7).

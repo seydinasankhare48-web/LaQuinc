@@ -11,13 +11,16 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:bootstrap": "pnpm --filter @laquinc/db db:bootstrap",
+    "db:migrate": "pnpm --filter @laquinc/db db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@laquinc/config": "workspace:*",
     "eslint": "^10.12.0",
     "prettier": "^3.9.10",
+    "supabase": "^2.120.0",
     "turbo": "^2.11.7",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1",
