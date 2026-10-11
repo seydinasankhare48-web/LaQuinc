@@ -1,5 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { Database } from './client';
+import type { MembershipRole } from './schema';
+import { MEMBERSHIP_ROLES } from './schema';
 
 export type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -8,6 +10,11 @@ export interface TenantContext {
   tenantId?: string;
   /** `sub` du JWT Supabase vérifié (= `users.id`). */
   userId?: string;
+  /**
+   * Rôle de la membership vérifiée par l'API. Les politiques RLS réservent l'écriture sur `memberships`
+   * et `tenants` à `owner`. Ne jamais le prendre d'une valeur envoyée par le client.
+   */
+  role?: MembershipRole;
 }
 
 export class InvalidTenantContextError extends Error {
@@ -20,9 +27,9 @@ export class InvalidTenantContextError extends Error {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Exécute `fn` dans une transaction dont le contexte (`app.tenant_id`, `app.user_id`) est limité à la
- * transaction (`set_config(..., true)`) : il ne fuit jamais vers la requête suivante. Les politiques RLS
- * lisent ces deux valeurs.
+ * Exécute `fn` dans une transaction dont le contexte (`app.tenant_id`, `app.user_id`, `app.role`) est limité
+ * à la transaction (`set_config(..., true)`) : il ne fuit jamais vers la requête suivante.
+ * Un contexte vide est permis (fail-closed : la RLS ne laisse alors rien passer).
  */
 export async function withTenant<T>(
   db: Database,
@@ -35,9 +42,14 @@ export async function withTenant<T>(
   if (context.userId !== undefined && !UUID.test(context.userId)) {
     throw new InvalidTenantContextError('userId');
   }
+  if (context.role !== undefined && !MEMBERSHIP_ROLES.includes(context.role)) {
+    throw new InvalidTenantContextError('role');
+  }
   return db.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT set_config('app.tenant_id', ${context.tenantId ?? ''}, true), set_config('app.user_id', ${context.userId ?? ''}, true)`,
+      sql`SELECT set_config('app.tenant_id', ${context.tenantId ?? ''}, true),
+                 set_config('app.user_id', ${context.userId ?? ''}, true),
+                 set_config('app.role', ${context.role ?? ''}, true)`,
     );
     return fn(tx);
   });

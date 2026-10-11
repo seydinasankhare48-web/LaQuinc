@@ -16,7 +16,6 @@ export const memberships = pgTable(
       .notNull()
       .references(() => users.id),
     role: text('role', { enum: MEMBERSHIP_ROLES }).notNull(),
-    pinHash: text('pin_hash'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     createdBy: uuid('created_by'),

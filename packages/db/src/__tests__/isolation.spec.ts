@@ -24,7 +24,7 @@ afterAll(async () => {
 });
 
 const asA = <T>(fn: Parameters<typeof withTenant<T>>[2]) =>
-  withTenant(db, { tenantId: w.tenantA, userId: w.userA }, fn);
+  withTenant(db, { tenantId: w.tenantA, userId: w.userA, role: 'owner' }, fn);
 
 describe('memberships', () => {
   it('lists only the tenant own memberships', async () => {
@@ -161,7 +161,7 @@ describe('sign-up flow', () => {
     const tenantId = uuidv7();
     const userId = uuidv7();
     await admin`INSERT INTO auth.users (id, phone) VALUES (${userId}, '+221770000001')`;
-    await withTenant(db, { tenantId, userId }, async (tx) => {
+    await withTenant(db, { tenantId, userId, role: 'owner' }, async (tx) => {
       await tx.insert(tenants).values({ id: tenantId, name: 'Nouvelle quincaillerie', slug: `new-${tenantId}` });
       await tx.insert(users).values({ id: userId, phone: '+221770000001' });
       await tx.insert(memberships).values({ id: uuidv7(), tenantId, userId, role: 'owner' });
@@ -173,7 +173,7 @@ describe('sign-up flow', () => {
   it('cannot create a user row for someone else', async () => {
     const tenantId = uuidv7();
     await expect(
-      withTenant(db, { tenantId, userId: w.userA }, (tx) =>
+      withTenant(db, { tenantId, userId: w.userA, role: 'owner' }, (tx) =>
         tx.insert(users).values({ id: w.userB, phone: '+221770000002' }),
       ),
     ).rejects.toThrow();

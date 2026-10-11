@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ADMIN_URL, APP_URL } from '../test/config';
+import { ADMIN_URL, APP_URL, assertSafeTestDatabase, MIGRATOR_URL } from '../test/config';
 import { seedWorld, type World } from '../test/seed';
 
 let admin: postgres.Sql;
@@ -64,10 +64,10 @@ describe('catalog guarantees', () => {
     expect(rows).toEqual([]);
   });
 
-  it('anon and authenticated (Supabase Data API roles) have no privilege on any table or function in public', async () => {
+  it('anon, authenticated and service_role have no privilege on any table or function in public', async () => {
     const tables = await admin`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`;
     for (const { tablename } of tables) {
-      for (const role of ['anon', 'authenticated']) {
+      for (const role of ['anon', 'authenticated', 'service_role']) {
         const [r] = await admin`
           SELECT has_table_privilege(${role}, ${'public.' + String(tablename)}, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER') AS ok`;
         expect(r?.ok, `${role} on ${String(tablename)}`).toBe(false);
@@ -77,7 +77,7 @@ describe('catalog guarantees', () => {
       SELECT p.oid::regprocedure::text AS fn FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'public'`;
     for (const { fn } of fns) {
-      for (const role of ['anon', 'authenticated']) {
+      for (const role of ['anon', 'authenticated', 'service_role']) {
         const [r] = await admin`SELECT has_function_privilege(${role}, ${String(fn)}, 'EXECUTE') AS ok`;
         expect(r?.ok, `${role} on ${String(fn)}`).toBe(false);
       }
@@ -89,5 +89,29 @@ describe('audit_logs immutability', () => {
   it('rejects UPDATE and DELETE even for a privileged role (trigger)', async () => {
     await expect(admin`UPDATE audit_logs SET action = 'edited' WHERE id = ${w.auditA}`).rejects.toThrow(/append-only/i);
     await expect(admin`DELETE FROM audit_logs WHERE id = ${w.auditA}`).rejects.toThrow(/append-only/i);
+  });
+});
+
+describe('future tables', () => {
+  it('a table created by the migrator is not open to the Supabase Data API roles by default', async () => {
+    const migrator = postgres(MIGRATOR_URL, { max: 1, onnotice: () => {} });
+    try {
+      await migrator.unsafe('CREATE TABLE public.zz_probe (id int)');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [r] = await admin`SELECT has_table_privilege(${role}, 'public.zz_probe', 'SELECT, INSERT, UPDATE, DELETE') AS ok`;
+        expect(r?.ok, role).toBe(false);
+      }
+    } finally {
+      await migrator.unsafe('DROP TABLE IF EXISTS public.zz_probe');
+      await migrator.end();
+    }
+  });
+});
+
+describe('test database guard', () => {
+  it('refuses a database that is not clearly a local test database', () => {
+    expect(() => assertSafeTestDatabase('postgres://u:p@localhost:5432/laquinc')).toThrow(/_test/);
+    expect(() => assertSafeTestDatabase('postgres://u:p@db.example.com:5432/laquinc_test')).toThrow(/local/);
+    expect(() => assertSafeTestDatabase('postgres://u:p@localhost:5432/laquinc_test')).not.toThrow();
   });
 });

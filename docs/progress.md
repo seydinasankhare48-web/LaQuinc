@@ -45,9 +45,11 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 -->
 
 ### 2026-10-12 (étape 3 · base et RLS)
-- Fait : `packages/db` (schéma Drizzle `tenants`, `users`, `memberships`, `audit_logs`), migrations avec RLS activée et forcée, `REVOKE` pour `anon`/`authenticated`, `audit_logs` en ajout seul (droits + trigger), rôles `laquinc_app` et `laquinc_migrator`, helper `withTenant`. 32 tests (isolation, rôles, garde-fous du catalogue, fuite de contexte) ; vérifiés en cassant volontairement des politiques.
+- Fait : `packages/db` (schéma Drizzle `tenants`, `users`, `memberships`, `audit_logs`), migrations avec RLS activée et forcée, `REVOKE` pour `anon`/`authenticated`, `audit_logs` en ajout seul (droits + trigger), rôles `laquinc_app` et `laquinc_migrator`, helper `withTenant`. 46 tests (isolation, rôles, garde-fous du catalogue, fuite de contexte, escalade de rôle) ; vérifiés en cassant volontairement des politiques. Revue sécurité : escalade de rôle intra-tenant corrigée (contexte `app.role`), `audit_logs` non falsifiable, PIN retiré de `memberships`, migrations testées avec `laquinc_migrator`, garde-fou contre le reset d'une base non-test.
 - Décisions : contexte `app.tenant_id` + `app.user_id` (voir `docs/data-model.md`) ; rôle de stats reporté à la semaine 11 (BYPASSRLS demande un superuser, à vérifier sur Supabase) ; `postgres-test` sur le port 54330.
 - À vérifier : MFA TOTP sur l'offre gratuite (le `config.toml` de la CLI indique « Pro ») ; pooler Supabase en mode transaction ; droit `REFERENCES` du migrator sur `auth.users` en production.
+
+- Reste à faire : tester `supabase start` en local (disque à 97 %, images partiellement téléchargées ~1,2 Go : à libérer avant) ; `archived_at` des memberships/tenants à appliquer côté API ; règle ESLint contre `sql.raw`/`unsafe`.
 
 ### 2026-10-11 (soir, Supabase)
 - Fait : adoption de Supabase comme infrastructure (ADR 0006) ; documentation, `CLAUDE.md`, skill, agent et `/pre-merge` mis à jour ; plugins installés (frontend-design, security-guidance, superpowers, code-review, context7).

@@ -14,7 +14,6 @@ CREATE TABLE "memberships" (
 	"tenant_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
 	"role" text NOT NULL,
-	"pin_hash" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_by" uuid,
