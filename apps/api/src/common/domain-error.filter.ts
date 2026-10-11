@@ -2,6 +2,12 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@n
 import type { Response } from 'express';
 import { BadRequestError, DomainError } from './errors';
 
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return 'Unknown error';
+  const pgCode = (error as { code?: string }).code ?? (error.cause as { code?: string } | undefined)?.code;
+  return `${error.name}${pgCode ? ` code=${pgCode}` : ''}`;
+}
+
 /** Filtre unique : jamais de détail interne dans la réponse. */
 @Catch()
 export class DomainErrorFilter implements ExceptionFilter {
@@ -21,7 +27,8 @@ export class DomainErrorFilter implements ExceptionFilter {
       res.status(status).json({ error: { code } });
       return;
     }
-    this.logger.error(exception instanceof Error ? exception.stack : 'Unknown error');
+    // Jamais de message ni de stack : les erreurs SQL de Drizzle embarquent les paramètres (téléphones…).
+    this.logger.error(describeError(exception));
     res.status(500).json({ error: { code: 'INTERNAL_ERROR' } });
   }
 }

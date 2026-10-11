@@ -6,6 +6,9 @@ import type { TenantContext } from '@laquinc/db';
 import { AuditService } from '../audit/audit.service';
 import type { AuthClaims } from '../auth/jwt-verifier';
 import { BadRequestError, ConflictError, NotFoundError } from '../common/errors';
+
+/** Garde-fou anti-abus : nombre maximal de quincailleries dont un utilisateur est propriétaire. */
+export const MAX_OWNED_TENANTS = 3;
 import { TenantDb } from '../db/tenant-db';
 import { TenantsRepository } from './tenants.repository';
 
@@ -42,6 +45,9 @@ export class TenantsService {
   async create(auth: AuthClaims, input: CreateTenantInput) {
     if (!auth.phone) throw new BadRequestError('PHONE_REQUIRED');
     const phone = auth.phone;
+
+    const owned = await this.db.run({ userId: auth.userId }, (tx) => this.repo.countOwnedTenants(tx, auth.userId));
+    if (owned >= MAX_OWNED_TENANTS) throw new ConflictError('TENANT_LIMIT');
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const tenantId = uuidv7();

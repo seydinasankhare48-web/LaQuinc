@@ -14,12 +14,14 @@ export interface JwtVerifier {
   verify(token: string): Promise<AuthClaims>;
 }
 
+const E164 = /^\+[1-9][0-9]{7,14}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function normalizePhone(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
   const digits = raw.replace(/\D/g, '');
-  return digits ? `+${digits}` : undefined;
+  const phone = `+${digits}`;
+  return E164.test(phone) ? phone : undefined;
 }
 
 /**
@@ -51,6 +53,7 @@ export class JoseJwtVerifier implements JwtVerifier {
         requiredClaims: ['sub', 'exp'],
       });
       if (typeof payload.sub !== 'string' || !UUID.test(payload.sub)) throw new Error('bad sub');
+      if (payload['is_anonymous'] === true) throw new Error('anonymous user');
       return {
         userId: payload.sub,
         phone: normalizePhone(payload['phone']),

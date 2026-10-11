@@ -84,9 +84,30 @@ describe('POST /tenants (sign-up)', () => {
       .post('/tenants')
       .set('Authorization', `Bearer ${await t.token({ sub: user.id, phone: user.phone })}`)
       .send({ name: 'Forcée', id: forced, role: 'cashier', tenantId: forced })
-      .expect(201);
-    expect(res.body.tenant.id).not.toBe(forced);
-    expect(res.body.membership.role).toBe('owner');
+      .expect(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    const none = await t.admin`SELECT 1 FROM tenants WHERE id = ${forced}`;
+    expect(none).toHaveLength(0);
+  });
+
+  it('rejects unknown fields instead of ignoring them', async () => {
+    const user = await createUserAuthOnly();
+    const res = await http()
+      .post('/tenants')
+      .set('Authorization', `Bearer ${await t.token({ sub: user.id, phone: user.phone })}`)
+      .send({ name: 'Boutique', role: 'cashier' })
+      .expect(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('limits how many tenants one user can own', async () => {
+    const user = await createUserAuthOnly();
+    const token = await t.token({ sub: user.id, phone: user.phone });
+    for (let i = 0; i < 3; i++) {
+      await http().post('/tenants').set('Authorization', `Bearer ${token}`).send({ name: `Boutique ${i}` }).expect(201);
+    }
+    const res = await http().post('/tenants').set('Authorization', `Bearer ${token}`).send({ name: 'Trop' }).expect(409);
+    expect(res.body.error.code).toBe('TENANT_LIMIT');
   });
 });
 

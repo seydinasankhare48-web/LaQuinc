@@ -130,6 +130,29 @@ describe('role changes by an owner', () => {
   });
 });
 
+describe('a user who belongs to two tenants', () => {
+  it('only sees and touches the active tenant memberships', async () => {
+    const both = await addMember(t.admin, w.tenantA, 'owner');
+    const inB = crypto.randomUUID();
+    await t.admin`INSERT INTO memberships (id, tenant_id, user_id, role) VALUES (${inB}, ${w.tenantB}, ${both.userId}, 'cashier')`;
+
+    const list = await http()
+      .get('/memberships')
+      .set('Authorization', await auth(both.userId))
+      .set('X-Tenant-Id', w.tenantA)
+      .expect(200);
+    expect(list.body.every((m: { id: string }) => m.id !== inB)).toBe(true);
+
+    // Sa propre membership d'un autre tenant est invisible depuis le tenant A : 404, pas 403.
+    await http()
+      .patch(`/memberships/${inB}`)
+      .set('Authorization', await auth(both.userId))
+      .set('X-Tenant-Id', w.tenantA)
+      .send({ role: 'owner' })
+      .expect(404);
+  });
+});
+
 describe('tenant isolation on /memberships', () => {
   it("never reveals or touches another tenant's memberships (404)", async () => {
     const ownerA = await addMember(t.admin, w.tenantA, 'owner');

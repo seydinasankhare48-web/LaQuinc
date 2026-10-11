@@ -66,6 +66,10 @@ describe('JWT verification', () => {
     await get('/me', 'not-a-jwt').expect(401);
   });
 
+  it('rejects anonymous Supabase sessions', async () => {
+    await get('/me', await t.token({ sub: w.userA, isAnonymous: true })).expect(401);
+  });
+
   it('rejects a token whose subject is not a UUID', async () => {
     await get('/me', await t.token({ sub: 'admin' })).expect(401);
   });
@@ -76,5 +80,7 @@ describe('normalizePhone', () => {
     expect(normalizePhone('221770000000')).toBe('+221770000000');
     expect(normalizePhone('+221770000000')).toBe('+221770000000');
     expect(normalizePhone(undefined)).toBeUndefined();
+    expect(normalizePhone('12')).toBeUndefined();
+    expect(normalizePhone('abc')).toBeUndefined();
   });
 });

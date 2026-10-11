@@ -18,11 +18,14 @@ import type { Env } from './config/env';
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60_000, limit: 120 }],
-      skipIf: () => process.env.RATE_LIMIT_DISABLED === 'true',
-    }),
     ConfigModule,
+    ThrottlerModule.forRootAsync({
+      inject: [ENV],
+      useFactory: (env: Env) => ({
+        throttlers: [{ ttl: 60_000, limit: 120 }],
+        skipIf: () => env.RATE_LIMIT_DISABLED,
+      }),
+    }),
     DbModule,
     AuditModule,
     TenantsModule,

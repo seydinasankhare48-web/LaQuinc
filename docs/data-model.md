@@ -59,8 +59,8 @@ un oubli de décorateur ne suffit pas à une escalade de rôle.
 
 | Table | Lecture | Écriture |
 | --- | --- | --- |
-| `tenants` | `id = app_tenant_id()` | INSERT/UPDATE si `id = app_tenant_id()` **et** rôle `owner` ; pas de DELETE |
-| `memberships` | `tenant_id = app_tenant_id()` **ou** `user_id = app_user_id()` (choix du tenant après connexion) | INSERT/UPDATE si `tenant_id = app_tenant_id()` **et** rôle `owner` ; pas de DELETE (archivage) |
+| `tenants` | `id = app_tenant_id()` ; sans tenant actif : les tenants dont l'utilisateur est membre actif | INSERT/UPDATE si `id = app_tenant_id()` **et** rôle `owner` ; pas de DELETE |
+| `memberships` | `tenant_id = app_tenant_id()` ; **sans tenant actif seulement** : ses propres memberships (choix du tenant après connexion) | INSERT/UPDATE si `tenant_id = app_tenant_id()` **et** rôle `owner` ; pas de DELETE (archivage) |
 | `users` | soi-même, ou membre du tenant courant | INSERT si `id = app_user_id()` ; UPDATE de `full_name` seulement (le téléphone ne change que via Supabase Auth) |
 | `audit_logs` | `tenant_id = app_tenant_id()` | INSERT seulement, en son propre nom (`actor_user_id = app_user_id()`) ; `created_at` posé par la base ; trigger interdisant UPDATE/DELETE/TRUNCATE à tout rôle |
 

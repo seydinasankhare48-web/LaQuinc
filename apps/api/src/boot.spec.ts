@@ -31,6 +31,12 @@ describe('application boot', () => {
     }
   });
 
+  it('refuses to disable rate limiting in production', () => {
+    const base = { SUPABASE_URL: 'https://example.supabase.co', DATABASE_URL: 'postgres://x' };
+    expect(() => parseEnv({ ...base, NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'true' })).toThrow(/RATE_LIMIT_DISABLED/);
+    expect(parseEnv({ ...base, NODE_ENV: 'test', RATE_LIMIT_DISABLED: 'true' }).RATE_LIMIT_DISABLED).toBe(true);
+  });
+
   it('refuses to start with an invalid environment', () => {
     expect(() => parseEnv({ SUPABASE_URL: 'not-a-url' })).toThrow(/Invalid environment/);
   });

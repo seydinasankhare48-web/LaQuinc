@@ -4,7 +4,7 @@ import { memberships, users, type MembershipRole, type Tx } from '@laquinc/db';
 
 @Injectable()
 export class MembershipsRepository {
-  listActive(tx: Tx) {
+  listActive(tx: Tx, tenantId: string) {
     return tx
       .select({
         id: memberships.id,
@@ -16,40 +16,40 @@ export class MembershipsRepository {
       })
       .from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
-      .where(isNull(memberships.archivedAt));
+      .where(and(eq(memberships.tenantId, tenantId), isNull(memberships.archivedAt)));
   }
 
-  async findActive(tx: Tx, id: string) {
+  async findActive(tx: Tx, tenantId: string, id: string) {
     const [row] = await tx
       .select()
       .from(memberships)
-      .where(and(eq(memberships.id, id), isNull(memberships.archivedAt)));
+      .where(and(eq(memberships.id, id), eq(memberships.tenantId, tenantId), isNull(memberships.archivedAt)));
     return row;
   }
 
   /** Verrouille les owners actifs : deux rétrogradations simultanées ne peuvent pas laisser zéro owner. */
-  lockActiveOwners(tx: Tx) {
+  lockActiveOwners(tx: Tx, tenantId: string) {
     return tx
       .select({ id: memberships.id })
       .from(memberships)
-      .where(and(eq(memberships.role, 'owner'), isNull(memberships.archivedAt)))
+      .where(and(eq(memberships.tenantId, tenantId), eq(memberships.role, 'owner'), isNull(memberships.archivedAt)))
       .for('update');
   }
 
-  async setRole(tx: Tx, id: string, role: MembershipRole) {
+  async setRole(tx: Tx, tenantId: string, id: string, role: MembershipRole) {
     const [row] = await tx
       .update(memberships)
       .set({ role, updatedAt: new Date() })
-      .where(eq(memberships.id, id))
+      .where(and(eq(memberships.id, id), eq(memberships.tenantId, tenantId)))
       .returning();
     return row;
   }
 
-  async archive(tx: Tx, id: string) {
+  async archive(tx: Tx, tenantId: string, id: string) {
     const [row] = await tx
       .update(memberships)
       .set({ archivedAt: new Date(), updatedAt: new Date() })
-      .where(eq(memberships.id, id))
+      .where(and(eq(memberships.id, id), eq(memberships.tenantId, tenantId)))
       .returning();
     return row;
   }

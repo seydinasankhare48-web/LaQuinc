@@ -27,6 +27,7 @@ export interface TokenClaims {
   sub?: string;
   phone?: string;
   aal?: string;
+  isAnonymous?: boolean;
   iss?: string;
   aud?: string;
   /** secondes depuis maintenant ; négatif = expiré */
@@ -34,12 +35,11 @@ export interface TokenClaims {
 }
 
 export async function createTestApp(): Promise<TestApp> {
-  process.env.RATE_LIMIT_DISABLED = 'true';
   const { publicKey, privateKey } = await generateKeyPair('ES256');
   const jwk: JWK = { ...(await exportJWK(publicKey)), kid: 'test-key', alg: 'ES256', use: 'sig' };
   const verifier = new JoseJwtVerifier(createLocalJWKSet({ keys: [jwk] }), ISSUER, AUDIENCE);
 
-  const env = parseEnv({ SUPABASE_URL, DATABASE_URL: APP_URL, RATE_LIMIT_DISABLED: 'true' });
+  const env = parseEnv({ SUPABASE_URL, DATABASE_URL: APP_URL, RATE_LIMIT_DISABLED: 'true', NODE_ENV: 'test' });
   const db = createDb(APP_URL, { max: 5 });
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(ENV)
@@ -55,7 +55,7 @@ export async function createTestApp(): Promise<TestApp> {
 
   const admin = postgres(ADMIN_URL, { max: 2, onnotice: () => {} });
   const token = (c: TokenClaims = {}) =>
-    new SignJWT({ phone: c.phone, aal: c.aal ?? 'aal1', role: 'authenticated' })
+    new SignJWT({ phone: c.phone, aal: c.aal ?? 'aal1', role: 'authenticated', is_anonymous: c.isAnonymous })
       .setProtectedHeader({ alg: 'ES256', kid: 'test-key' })
       .setSubject(c.sub ?? uuidv7())
       .setIssuer(c.iss ?? ISSUER)
