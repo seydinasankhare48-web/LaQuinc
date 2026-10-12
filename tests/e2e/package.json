@@ -1,0 +1,25 @@
+{
+  "name": "@laquinc/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "fake-supabase": "tsx src/fake-supabase/start.ts",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@laquinc/config": "workspace:*",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "dependencies": {
+    "@laquinc/db": "workspace:*",
+    "jose": "^6.2.12",
+    "postgres": "^3.4.9",
+    "uuidv7": "^1.2.1"
+  }
+}

@@ -1,10 +1,8 @@
-import { t } from '@laquinc/i18n';
+'use client';
+
+import { Guard } from '../components/guard';
+import { HomeScreen } from '../components/home-screen';
 
 export default function HomePage() {
-  return (
-    <main>
-      <h1>{t('app.name')}</h1>
-      <p>{t('app.comingSoon')}</p>
-    </main>
-  );
+  return <Guard allow="ready">{(s) => (s.name === 'ready' ? <HomeScreen active={s.active} /> : null)}</Guard>;
 }

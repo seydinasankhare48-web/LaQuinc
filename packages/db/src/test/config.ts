@@ -6,8 +6,8 @@ export const TEST_PASSWORDS = {
   migrator: 'test-migrator-password',
 } as const;
 
-export function roleUrl(role: string, password: string): string {
-  const url = new URL(ADMIN_URL);
+export function roleUrl(role: string, password: string, baseUrl: string = ADMIN_URL): string {
+  const url = new URL(baseUrl);
   url.username = role;
   url.password = password;
   return url.toString();

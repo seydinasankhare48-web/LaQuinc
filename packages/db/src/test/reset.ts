@@ -15,8 +15,9 @@ export async function resetTestDatabase(
   admin: Sql,
   migrator: Sql,
   passwords: { app: string; migrator: string },
+  databaseUrl: string = ADMIN_URL,
 ): Promise<void> {
-  assertSafeTestDatabase(ADMIN_URL);
+  assertSafeTestDatabase(databaseUrl);
   await admin.unsafe(`
     DROP SCHEMA IF EXISTS public CASCADE;
     DROP SCHEMA IF EXISTS drizzle CASCADE;
