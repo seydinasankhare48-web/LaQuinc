@@ -6,8 +6,8 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 ## État actuel
 
 - **Phase** : 1 · MVP gestion
-- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–4 faites — voir `docs/plan-fondations.md`)
-- **Prochaine étape** : étape 5 du plan des Fondations (web minimal : connexion, inscription, e2e Playwright)
+- **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–5 faites — voir `docs/plan-fondations.md`)
+- **Prochaine étape** : étape 6 du plan des Fondations (staging : Vercel, hébergeur de l'API, projet Supabase)
 - **Bloquants** : aucun
 
 ## Checklist du MVP
@@ -43,6 +43,12 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-12 (étape 5 · web)
+- Fait : `apps/web` — connexion par téléphone + code OTP (Supabase JS dans le navigateur, session gardée côté navigateur), inscription de la quincaillerie, choix de la quincaillerie, accueil minimal et déconnexion ; états chargement / erreur / hors ligne ; redirections par état (`Guard`) ; client API typé (erreurs traduites via `packages/i18n`) ; Tailwind v4 et composants `packages/ui` (Button, Field, Alert, Spinner) ; pages `noindex`. 30 tests unitaires web ; 4 e2e Playwright (parcours inscription → déconnexion → reconnexion, code incorrect, numéro invalide, hors ligne) sur un écran mobile, avec la vraie API, la vraie base et un faux Supabase Auth ; job `e2e` en CI.
+- Décisions : session dans le navigateur (pas de cookies serveur) ; faux Supabase Auth pour les e2e ; composants maison.
+- À vérifier au staging : comportement du vrai GoTrue (codes d'erreur, expiration de l'OTP, format du téléphone dans le JWT).
+- Demandé : connexion Google. Hors périmètre MVP (`docs/plan.md`) et impact sur le modèle (un compte Google n'a pas de téléphone) : en attente d'une décision de conception.
 
 ### 2026-10-12 (étape 4 · API)
 - Fait : `apps/api` — vérification du JWT Supabase (JWKS, `iss`, `aud`, `exp`, algorithmes asymétriques seulement), résolution du tenant par membership (`X-Tenant-Id` vérifié, memberships et tenants archivés ignorés), `@Roles`, `POST /tenants` (inscription transactionnelle + audit), `GET /me`, `GET/PATCH /tenants/current`, `GET /memberships`, `PATCH /memberships/:id`, `POST /memberships/:id/archive` (pas d'auto-modification, dernier owner protégé par verrou), filtre d'erreurs unique, validation Zod (`packages/validation`), helmet, CORS, limitation de débit, règle ESLint contre `sql.raw`/`.unsafe`. 45 tests API (JWT, rôles, isolation, inscription, garde-fous, démarrage sans providers factices, déclaration d'accès de chaque route) ; vérifiés par mutation. Revue sécurité : cloisonnement des memberships/tenants dans la RLS (migration 0002) et filtres explicites, `/me` et la résolution du tenant en une transaction, limite de 3 quincailleries par propriétaire, refus par défaut des routes non déclarées, logs sans PII, `TRUST_PROXY`, `.strict()` sur les schémas, sessions anonymes refusées.

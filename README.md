@@ -18,6 +18,16 @@ pnpm db:migrate             # migrations Drizzle (la CLI Supabase ne gère pas l
 pnpm dev                    # web, admin, api et worker
 ```
 
+## Tests
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test   # unitaires et isolation (PostgreSQL de test : docker compose up -d postgres-test)
+pnpm e2e                                   # parcours Playwright : API + base + web + faux Supabase Auth
+```
+
+Les e2e utilisent un faux serveur Supabase Auth (`tests/e2e/src/fake-supabase`, code OTP `123456`) : ils prouvent
+notre intégration, pas le comportement du vrai GoTrue (test de fumée au staging).
+
 ## Structure
 
 ```

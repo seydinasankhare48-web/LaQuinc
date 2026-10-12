@@ -13,7 +13,9 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "db:bootstrap": "pnpm --filter @laquinc/db db:bootstrap",
-    "db:migrate": "pnpm --filter @laquinc/db db:migrate"
+    "db:migrate": "pnpm --filter @laquinc/db db:migrate",
+    "e2e:build": "pnpm --filter @laquinc/api build && NEXT_PUBLIC_SUPABASE_URL=http://localhost:54399 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=e2e-publishable-key NEXT_PUBLIC_API_URL=http://localhost:3101 pnpm --filter @laquinc/web build",
+    "e2e": "pnpm e2e:build && pnpm --filter @laquinc/e2e e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
