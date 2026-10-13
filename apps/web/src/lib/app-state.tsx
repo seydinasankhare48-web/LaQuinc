@@ -23,6 +23,7 @@ export type AppStatus =
   | { name: 'loading' }
   | { name: 'signedOut' }
   | { name: 'error'; offline: boolean; code: string }
+  | { name: 'needsPhone' }
   | { name: 'needsSignup' }
   | { name: 'needsPicker'; memberships: MeMembership[] }
   | { name: 'ready'; active: MeMembership; memberships: MeMembership[] };
@@ -57,6 +58,8 @@ export function routeFor(status: AppStatus): string | null {
   switch (status.name) {
     case 'signedOut':
       return '/connexion';
+    case 'needsPhone':
+      return '/telephone';
     case 'needsSignup':
       return '/inscription';
     case 'needsPicker':
@@ -101,7 +104,8 @@ export function AppProvider({ services, children }: { services: AppServices; chi
         fetch: services.fetch,
       }).get<Me>('/me');
       const { memberships } = me;
-      if (memberships.length === 0) return apply({ name: 'needsSignup' });
+      // Connecté sans numéro (ex. par Google) : le numéro vérifié est obligatoire avant de créer une quincaillerie.
+      if (memberships.length === 0) return apply({ name: me.phone ? 'needsSignup' : 'needsPhone' });
       const stored = services.tenantStore.get();
       const active = memberships.find((m) => m.tenantId === stored) ?? (memberships.length === 1 ? memberships[0] : undefined);
       if (!active) return apply({ name: 'needsPicker', memberships });

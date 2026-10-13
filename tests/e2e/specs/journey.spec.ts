@@ -105,3 +105,63 @@ test('les pages privées répondent hors ligne avec un message clair', async ({ 
   await expect(page.locator('main [role="alert"]')).toContainText('hors ligne');
   await context.setOffline(false);
 });
+
+test('Google : numéro vérifié obligatoire avant de créer la quincaillerie', async ({ page }) => {
+  const phone = uniquePhone();
+  await page.goto('/connexion');
+  await page.getByRole('button', { name: 'Continuer avec Google' }).click();
+
+  // Retour de Google : session sans numéro → écran de vérification, jamais l'inscription.
+  await expect(page).toHaveURL(/\/telephone$/);
+  await page.goto('/inscription');
+  await expect(page).toHaveURL(/\/telephone$/);
+
+  // Une création directe via l'API est refusée tant que le numéro n'est pas vérifié.
+  const token = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((k) => k.endsWith('-auth-token'));
+    return key ? (JSON.parse(localStorage.getItem(key)!) as { access_token: string }).access_token : null;
+  });
+  const refused = await page.request.post('http://localhost:3101/tenants', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { name: 'Sans numéro' },
+  });
+  expect(refused.status()).toBe(400);
+  expect((await refused.json()) as { error: { code: string } }).toMatchObject({ error: { code: 'PHONE_REQUIRED' } });
+
+  // Numéro + code → inscription → espace gérant.
+  await page.getByLabel('Numéro de téléphone').fill(phone.local);
+  await page.getByRole('button', { name: 'Recevoir le code' }).click();
+  await page.getByLabel('Code à 6 chiffres').fill(OTP);
+  await page.getByRole('button', { name: 'Valider' }).click();
+  await expect(page).toHaveURL(/\/inscription$/);
+  await page.getByLabel('Nom de la quincaillerie').fill('Quincaillerie Google');
+  await page.getByRole('button', { name: 'Créer ma quincaillerie' }).click();
+  await expect(page.getByRole('heading', { name: 'Quincaillerie Google' })).toBeVisible();
+
+  const db = postgres(ADMIN_E2E_URL, { max: 1, onnotice: () => {} });
+  try {
+    const rows = await db`SELECT u.phone FROM users u JOIN memberships m ON m.user_id = u.id WHERE u.phone = ${phone.e164}`;
+    expect(rows).toHaveLength(1);
+  } finally {
+    await db.end();
+  }
+});
+
+test('Google : un numéro déjà utilisé par un compte téléphone est refusé avec un message clair', async ({ page, browser }) => {
+  const phone = uniquePhone();
+  // Compte téléphone existant, dans un autre navigateur.
+  const other = await browser.newContext();
+  const existing = await other.newPage();
+  await existing.goto('http://localhost:3100/connexion');
+  await login(existing, phone);
+  await expect(existing).toHaveURL(/\/inscription$/);
+  await other.close();
+
+  await page.goto('/connexion');
+  await page.getByRole('button', { name: 'Continuer avec Google' }).click();
+  await expect(page).toHaveURL(/\/telephone$/);
+  await page.getByLabel('Numéro de téléphone').fill(phone.local);
+  await page.getByRole('button', { name: 'Recevoir le code' }).click();
+  await expect(page.locator('main [role="alert"]')).toContainText('déjà utilisé par un autre compte');
+  await expect(page).toHaveURL(/\/telephone$/);
+});

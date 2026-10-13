@@ -4,7 +4,7 @@ import { Guard } from '../components/guard';
 import { fakeAuth, json, renderApp } from '../test/helpers';
 
 const m = (tenantId: string, name: string, role = 'owner') => ({ id: `m-${tenantId}`, tenantId, role, tenantName: name, tenantSlug: name });
-const me = (memberships: ReturnType<typeof m>[]) => json(200, { user: null, phone: null, memberships });
+const me = (memberships: ReturnType<typeof m>[], phone: string | null = '+221771234567') => json(200, { user: null, phone, memberships });
 const screens = (allow: 'ready' | 'signedOut' | 'needsSignup' | 'needsPicker') => (
   <Guard allow={allow}>{() => <p>ECRAN {allow}</p>}</Guard>
 );
@@ -21,6 +21,13 @@ describe('application state', () => {
     const auth = fakeAuth({ hasSession: vi.fn().mockResolvedValue(true) });
     const { navigate } = renderApp(screens('ready'), { auth, fetch: vi.fn().mockResolvedValue(me([])) });
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/inscription'));
+  });
+
+  it('sends a user without a verified phone (Google) to /telephone, never to /inscription', async () => {
+    const auth = fakeAuth({ hasSession: vi.fn().mockResolvedValue(true) });
+    const { navigate } = renderApp(screens('ready'), { auth, fetch: vi.fn().mockResolvedValue(me([], null)) });
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/telephone'));
+    expect(navigate).not.toHaveBeenCalledWith('/inscription');
   });
 
   it('opens the only quincaillerie directly and remembers it', async () => {

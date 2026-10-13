@@ -16,6 +16,11 @@ export function fakeAuth(overrides: Partial<AuthPort> = {}): AuthPort & { emit: 
     sendCode: vi.fn().mockResolvedValue(undefined),
     verifyCode: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),
+    signInWithGoogle: vi.fn().mockResolvedValue(undefined),
+    completeOAuth: vi.fn().mockResolvedValue(undefined),
+    startPhoneVerification: vi.fn().mockResolvedValue(undefined),
+    verifyPhone: vi.fn().mockResolvedValue(undefined),
+    linkGoogle: vi.fn().mockResolvedValue(undefined),
     ...overrides,
     emit: () => listeners.forEach((l) => l()),
   };
