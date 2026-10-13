@@ -26,6 +26,9 @@ Les deux se traitent dans l'architecture, pas après coup.
 - Connexion par téléphone + code OTP via **Supabase Auth**. Pas de crypto maison. Le fournisseur SMS est
   branché par le *Send SMS hook* (WhatsApp natif seulement via Twilio) ; choix à faire selon coût et
   délivrabilité vers Orange, Free et Expresso.
+- Connexion Google (ADR 0007) en complément : PKCE, puis numéro de téléphone vérifié obligatoire avant de créer
+  une quincaillerie (l'API refuse `POST /tenants` sans claim `phone`). Liaison manuelle d'identité activée ;
+  secret OAuth uniquement en variable d'environnement.
 - OTP : 6 chiffres. Par défaut Supabase l'expire après 1 h et limite à 1 demande par 60 s : réduire
   l'expiration (visée : 5 min), activer un CAPTCHA et vérifier les limites de tentatives dans la
   configuration Auth. Limitation de débit complémentaire par numéro et par IP côté API.

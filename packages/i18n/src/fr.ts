@@ -31,6 +31,19 @@ export const fr = {
   'login.code.changePhone': 'Changer de numéro',
   'login.tooManyRequests': 'Trop d’essais. Patientez une minute puis réessayez.',
 
+  'login.or': 'ou',
+  'login.google': 'Continuer avec Google',
+  'login.google.failed': 'La connexion avec Google a échoué. Réessayez ou utilisez votre numéro de téléphone.',
+
+  'phone.title': 'Vérifiez votre numéro',
+  'phone.subtitle': 'Votre numéro de téléphone est obligatoire pour créer une quincaillerie. Nous vous envoyons un code par SMS.',
+  'phone.taken': 'Ce numéro est déjà utilisé par un autre compte. Déconnectez-vous puis connectez-vous avec ce numéro.',
+  'phone.send': 'Recevoir le code',
+
+  'callback.loading': 'Connexion en cours…',
+  'callback.failed': 'La connexion a échoué.',
+  'callback.back': 'Retour à la connexion',
+
   'signup.title': 'Créer votre quincaillerie',
   'signup.subtitle': 'Quelques informations pour commencer. Vous pourrez les modifier plus tard.',
   'signup.name.label': 'Nom de la quincaillerie',
@@ -46,6 +59,9 @@ export const fr = {
   'home.welcome': 'Bienvenue',
   'home.role': 'Votre rôle : {role}',
   'home.next': 'Le stock, la caisse et le crédit client arrivent bientôt.',
+
+  'home.linkGoogle': 'Associer mon compte Google',
+  'home.linkGoogle.failed': 'Impossible d’associer Google pour le moment.',
 
   'role.owner': 'Propriétaire',
   'role.manager': 'Gérant',

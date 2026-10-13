@@ -65,7 +65,7 @@ Hors MVP volontairement : application native (PWA suffit), comptabilité complè
 ## Planning sur 12 semaines
 
 1. **Semaines 1–2 · Fondations** — monorepo, CI, projet Supabase (auth téléphone + OTP via Supabase Auth, CLI locale),
-   vérification du JWT dans l'API, tenants, rôles, RLS + tests d'isolation, staging (voir `docs/plan-fondations.md`).
+   connexion Google en complément du téléphone (hors MVP initial, ADR 0007), vérification du JWT dans l'API, tenants, rôles, RLS + tests d'isolation, staging (voir `docs/plan-fondations.md`).
 2. **Semaines 3–4 · Catalogue et stock** — articles, catégories, unités, import CSV, mouvements, inventaire, alertes.
 3. **Semaines 5–6 · Caisse** — vente rapide, paiements multiples, reçus, hors ligne + synchronisation.
 4. **Semaine 7 · Clients et crédit** — fiches, ardoise, plafond, remboursements, relances.

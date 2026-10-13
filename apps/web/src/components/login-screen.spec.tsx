@@ -77,3 +77,20 @@ describe('LoginScreen', () => {
     expect(screen.getByLabelText('Numéro de téléphone')).toBeInTheDocument();
   });
 });
+
+describe('LoginScreen — Google', () => {
+  it('starts the Google sign-in', async () => {
+    const auth = fakeAuth();
+    renderApp(<LoginScreen />, { auth });
+    await userEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }));
+    expect(auth.signInWithGoogle).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows an error and re-enables the button when Google cannot start', async () => {
+    const auth = fakeAuth({ signInWithGoogle: vi.fn().mockRejectedValue(new AuthError('UNKNOWN')) });
+    renderApp(<LoginScreen />, { auth });
+    await userEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('connexion avec Google a échoué');
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeEnabled();
+  });
+});

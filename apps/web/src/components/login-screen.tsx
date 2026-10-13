@@ -80,6 +80,17 @@ export function LoginScreen() {
     }
   }
 
+  async function onGoogle() {
+    setBusy(true);
+    setFormError(null);
+    try {
+      await services.auth.signInWithGoogle(); // redirige vers Google
+    } catch {
+      setFormError(t('login.google.failed'));
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-4">
       <header className="flex flex-col gap-2">
@@ -107,6 +118,10 @@ export function LoginScreen() {
           />
           <Button type="submit" loading={busy}>
             {t('login.sendCode')}
+          </Button>
+          <p className="text-center text-sm text-stone-600">{t('login.or')}</p>
+          <Button variant="secondary" disabled={busy} onClick={() => void onGoogle()}>
+            {t('login.google')}
           </Button>
         </form>
       ) : (
