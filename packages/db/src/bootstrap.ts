@@ -22,12 +22,23 @@ export async function bootstrapRoles(admin: Sql, passwords: RolePasswords): Prom
       IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'laquinc_migrator') THEN CREATE ROLE laquinc_migrator LOGIN; END IF;
     END $$;
   `);
+  // Sur Supabase, `postgres` n'est pas superuser : il ne peut pas citer l'attribut SUPERUSER, même pour le refuser
+  // (les rôles créés ci-dessus sont NOSUPERUSER par défaut). Un superuser le réapplique, pour corriger un rôle modifié.
+  const [current] = await admin<
+    { rolsuper: boolean }[]
+  >`SELECT rolsuper FROM pg_roles WHERE rolname = current_user`;
+  const rolsuper = current?.rolsuper ?? false;
+  const noSuperuser = rolsuper ? 'NOSUPERUSER' : '';
   await admin.unsafe(
-    `ALTER ROLE laquinc_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 50 PASSWORD ${quoteLiteral(passwords.app)}`,
+    `ALTER ROLE laquinc_app LOGIN ${noSuperuser} NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 50 PASSWORD ${quoteLiteral(passwords.app)}`,
   );
   await admin.unsafe(
-    `ALTER ROLE laquinc_migrator LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5 PASSWORD ${quoteLiteral(passwords.migrator)}`,
+    `ALTER ROLE laquinc_migrator LOGIN ${noSuperuser} NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 5 PASSWORD ${quoteLiteral(passwords.migrator)}`,
   );
+  // ALTER DEFAULT PRIVILEGES FOR ROLE exige d'être membre du rôle : un administrateur non superuser (Supabase) doit
+  // s'y rattacher avec l'héritage (un superuser n'en a pas besoin).
+  if (!rolsuper)
+    await admin.unsafe('GRANT laquinc_migrator TO CURRENT_USER WITH INHERIT TRUE, SET TRUE');
   await admin.unsafe(`
     REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
     GRANT USAGE ON SCHEMA public TO laquinc_app;
@@ -50,6 +61,22 @@ export async function bootstrapRoles(admin: Sql, passwords: RolePasswords): Prom
         EXCEPTION WHEN insufficient_privilege THEN
           RAISE NOTICE 'Could not grant REFERENCES on auth.users to laquinc_migrator: grant it with a role that owns auth.users';
         END;
+      END IF;
+    END $$;
+  `);
+}
+
+/**
+ * Ajoute `users.id -> auth.users(id)` si la migration n'a pas pu le faire (sur Supabase, le migrator n'a pas
+ * REFERENCES sur auth.users). À exécuter avec le rôle administrateur, après `bootstrapRoles` et les migrations :
+ * membre de `laquinc_migrator`, il peut modifier `users` et détient lui-même REFERENCES. Idempotent.
+ */
+export async function ensureAuthUsersForeignKey(admin: Sql): Promise<void> {
+  await admin.unsafe(`
+    DO $$ BEGIN
+      IF to_regclass('public.users') IS NOT NULL AND to_regclass('auth.users') IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_id_auth_users_fk' AND conrelid = 'public.users'::regclass) THEN
+        ALTER TABLE public.users ADD CONSTRAINT users_id_auth_users_fk FOREIGN KEY (id) REFERENCES auth.users (id);
       END IF;
     END $$;
   `);

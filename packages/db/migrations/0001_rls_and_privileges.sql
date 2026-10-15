@@ -3,7 +3,14 @@
 -- app.tenant_id, app.user_id et app.role (rôle de la membership déjà vérifiée par l'API).
 
 -- 1. Contraintes
-ALTER TABLE "users" ADD CONSTRAINT "users_id_auth_users_fk" FOREIGN KEY ("id") REFERENCES auth.users ("id");
+-- Sur Supabase, le migrator n'a pas le droit REFERENCES sur auth.users (qu'`postgres` ne peut pas lui transmettre) :
+-- la clé étrangère est alors ajoutée par `db:migrate` avec le rôle administrateur (ensureAuthUsersForeignKey).
+DO $$ BEGIN
+  ALTER TABLE "users" ADD CONSTRAINT "users_id_auth_users_fk" FOREIGN KEY ("id") REFERENCES auth.users ("id");
+EXCEPTION WHEN insufficient_privilege THEN
+  RAISE NOTICE 'users_id_auth_users_fk not created: no REFERENCES on auth.users for this role';
+END $$;
+--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_phone_e164_check" CHECK ("phone" ~ '^\+[1-9][0-9]{7,14}$');
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_role_check" CHECK ("role" IN ('owner', 'manager', 'cashier'));
 --> statement-breakpoint

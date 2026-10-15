@@ -12,6 +12,7 @@ Un ADR accepté ne se modifie pas : s'il est remplacé, on en écrit un nouveau 
 | [0005](0005-montants-entiers-xof.md) | Montants en entiers FCFA | Acceptée |
 | [0006](0006-supabase.md) | Supabase comme infrastructure, logique métier dans l'API | Acceptée |
 | [0007](0007-google-en-complement.md) | Google en complément du téléphone, numéro vérifié obligatoire | Acceptée |
+| [0008](0008-staging-render.md) | Staging : API sur Render gratuit, web sur Vercel, Supabase | Acceptée |
 
 ## Modèle
 

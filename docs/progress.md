@@ -7,7 +7,7 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 
 - **Phase** : 1 · MVP gestion
 - **Bloc en cours** : Semaines 1–2 · Fondations (étapes 1–5 faites — voir `docs/plan-fondations.md`)
-- **Prochaine étape** : étape 6 du plan des Fondations (staging : Vercel, hébergeur de l'API, projet Supabase)
+- **Prochaine étape** : étape 6 du plan des Fondations, suite (base Supabase faite ; reste Render + Upstash, Vercel, variables)
 - **Bloquants** : aucun
 
 ## Checklist du MVP
@@ -43,6 +43,13 @@ Claude Code le lit en début de session. Les entrées les plus récentes sont en
 - Décisions : (lien vers l'ADR)
 - Prochaine étape :
 -->
+
+### 2026-10-15 (étape 6 · base Supabase de staging)
+- Fait : projet Supabase relié (région eu-west-1, pooler en mode session car la connexion directe est IPv6 seulement) ; `db:bootstrap` et `db:migrate` appliqués au vrai projet : 4 tables propriétés de `laquinc_migrator`, RLS activée et forcée, aucun droit pour `anon`/`authenticated`/`service_role`, clé étrangère vers `auth.users` en place. Tests `packages/db` : 49 verts.
+- Correctifs : `bootstrapRoles` ne cite plus `NOSUPERUSER` quand l'administrateur n'est pas superuser (Supabase) et rattache `postgres` à `laquinc_migrator` ; la migration 0001 tolère l'absence de `REFERENCES` sur `auth.users` et `db:migrate` ajoute la clé étrangère avec le rôle administrateur (`ensureAuthUsersForeignKey`).
+- Décisions : hébergeur de l'API = Render (offre gratuite, veille après inactivité) + Upstash pour Redis, pour le staging seulement ; passer à un hébergement payant et à Supabase Pro avant les pilotes. ADR à écrire.
+- Reste à faire : projet Render (API) et Upstash (Redis), Vercel (web), variables d'environnement, activer Google dans Supabase, tester la désactivation de la Data API, vérifier le vrai GoTrue (SMS, claim `phone`, `linkIdentity`). Clé `sb_secret_…` à régénérer (elle a été affichée dans une session).
+- Prochaine étape : Render + Upstash.
 
 ### 2026-10-13 (connexion Google)
 - Fait : « Continuer avec Google » (PKCE, `/auth/callback`), écran `/telephone` (ajout + vérification du numéro par `phone_change`, session renouvelée), état `needsPhone`, bouton « Associer mon compte Google » (`linkIdentity`) à l'accueil ; faux Google dans le faux Supabase ; 9 tests unitaires et 2 e2e de plus (Google → téléphone → inscription ; numéro déjà utilisé). Aucun changement d'API ni de base : `POST /tenants` exige déjà le claim `phone`.
