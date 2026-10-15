@@ -1,0 +1,28 @@
+# Blueprint Render : API NestJS du staging. Les valeurs `sync: false` se saisissent dans le tableau de bord Render
+# (jamais dans le dépôt). Voir docs/decisions/0008-staging-render.md.
+services:
+  - type: web
+    name: laquinc-api-staging
+    runtime: node
+    plan: free
+    region: frankfurt # la plus proche de Supabase (eu-west-1) parmi les régions Render
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @laquinc/api build
+    startCommand: node apps/api/dist/main.js
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY # Render place un proxy devant l'API : sans lui, la limitation de débit voit l'IP du proxy
+        value: "1"
+      - key: JWT_AUDIENCE
+        value: authenticated
+      - key: SUPABASE_URL
+        sync: false
+      - key: DATABASE_URL # pooler Supabase en mode session, rôle laquinc_app.<ref-projet>
+        sync: false
+      - key: CORS_ORIGINS # URL du site Vercel, séparées par des virgules
+        sync: false
