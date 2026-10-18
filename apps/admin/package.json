@@ -12,9 +12,9 @@
   "dependencies": {
     "@laquinc/i18n": "workspace:*",
     "@laquinc/ui": "workspace:*",
-    "next": "^16.4.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "next": "^16.4.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@laquinc/config": "workspace:*",
@@ -22,6 +22,6 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   }
 }
