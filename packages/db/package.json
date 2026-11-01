@@ -15,11 +15,11 @@
   },
   "devDependencies": {
     "@laquinc/config": "workspace:*",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
